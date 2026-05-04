@@ -931,13 +931,35 @@ PASO 5 — API REST pública (Fase 2)
 
 ## Modelo de negocio (para contexto del agente)
 
-- **Fase 0-1**: todo gratuito, sin comisiones. Objetivo: transacciones reales.
-- **Fase 2+**: comisión al comprador según ticket:
-  - < 1.000€ → 1,5%
-  - 1.000€–10.000€ → 1,0%
-  - 10.000€–100.000€ → 0,5%
-  - > 100.000€ → 0,2% negociable
-- **Servicios premium**: 99–499€/mes para analytics, SLA, historial extendido.
+Schedule validada contra comparables (Mirakl, SAP Ariba, Abastores, OpenSea, AP2, etc.) en mayo 2026. Source of truth en runtime: `fee_schedule.json` en raíz del repo, expuesto vía la tool `get_fee_schedule`.
+
+### Comisión transaccional (Fase 2+)
+
+Buyer-pays. Calculada y registrada por el server en el momento del ACCEPT — irreversible. El comprador la ve antes de aceptar términos.
+
+| Tramo (volumen €) | Rate | Cap |
+|---|---|---|
+| < 1.000 | 1,5% | — |
+| 1.000–10.000 | 1,0% | — |
+| 10.000–100.000 | 0,5% | — |
+| > 100.000 | 0,4% | **5.000 €/deal** |
+
+Notas de diseño:
+- **Buyer-only**: vendedores commodity no absorben fees con márgenes finos; cobrar al ANNOUNCE hundiría la densidad del dataset (activo estratégico).
+- **El cap de 5.000 €/deal** en el top tier va explícito en `fee_schedule.json` como `max_fee_eur`, versionado, no como excepción ad-hoc.
+- **Fase 0-1**: todo gratuito. La schedule queda registrada en cada deal (con `rate=0`) para que la migración a cobrar sea un cambio de configuración, no de schema.
+- **No competimos en la capa de pagos**: AP2, Stripe ACP y x402 se van a 0 €. Zocux cobra por matching, negociación, dispute resolution y dataset — estrictamente *encima* de los rails.
+
+### Servicios premium SaaS
+
+| Tier | €/mes | Para |
+|---|---|---|
+| Free | 0 | Acceso protocolo + manifest + transcripts propios últimos 30 días |
+| Operator | 99 | Analytics propias + export histórico propio completo |
+| Trader | 499 | Operator + cuota API 10× + datos agregados anonimizados de mercado |
+| Enterprise | 1.499 | Trader + SLA 99,9% + onboarding directo + dataset agregado completo (anonimizado) |
+
+El tier Enterprise es la métrica que mira un acquirer (Mirakl, SAP, AWS) en DD: ARR de calidad, contratos plurianuales, dataset diferenciado.
 
 El activo más valioso no es el código — es el dataset de negociaciones reales. Cada transacción registrada con su payload completo es propiedad intelectual de Zocux.
 
