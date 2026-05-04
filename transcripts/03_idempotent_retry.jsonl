@@ -1,0 +1,4 @@
+{"_meta": {"name": "idempotent_retry", "purpose": "Same announce twice with the same idempotency_key returns status=duplicate; only one offer exists.", "tags": ["idempotency", "retry"]}}
+{"step": 1, "actor": "seller-1", "tool": "announce_offer", "args": {"agent_id": "seller-1", "product": "Wheat", "quantity": 50, "unit": "ton", "price_min": 220, "location": "Castilla", "available_until": "$now+72h", "idempotency_key": "wheat-2026-W18-batch-A"}, "result": {"status": "announced", "offer_id": "$offer_id"}}
+{"step": 2, "actor": "seller-1", "tool": "announce_offer", "args": {"agent_id": "seller-1", "product": "Wheat", "quantity": 50, "unit": "ton", "price_min": 220, "location": "Castilla", "available_until": "$now+72h", "idempotency_key": "wheat-2026-W18-batch-A"}, "result": {"status": "duplicate", "offer_id": "$offer_id"}}
+{"step": 3, "actor": "buyer-1", "tool": "discover_offers", "args": {"agent_id": "buyer-1", "product": "wheat"}, "result": {"count": 1}}

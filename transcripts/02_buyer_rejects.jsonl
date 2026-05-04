@@ -1,0 +1,5 @@
+{"_meta": {"name": "buyer_rejects", "purpose": "Buyer proposes then rejects their own proposal; offer remains active and discoverable.", "tags": ["reject", "offer-stays-active"]}}
+{"step": 1, "actor": "seller-1", "tool": "announce_offer", "args": {"agent_id": "seller-1", "product": "Tomatoes", "quantity": 1000, "unit": "kg", "price_min": 1.2, "location": "Almería", "available_until": "$now+24h"}, "result": {"status": "announced", "offer_id": "$offer_id"}}
+{"step": 2, "actor": "buyer-1", "tool": "propose_deal", "args": {"offer_id": "$offer_id", "buyer_agent_id": "buyer-1", "proposed_price": 1.4, "proposed_quantity": 500, "proposed_delivery": "$now+72h", "expires_at": "$now+12h"}, "result": {"status": "proposed", "proposal_id": "$proposal_id"}}
+{"step": 3, "actor": "buyer-1", "tool": "reject_deal", "args": {"proposal_id": "$proposal_id", "rejecting_agent_id": "buyer-1", "reason": "found cheaper alternative"}, "result": {"status": "rejected", "reason": "found cheaper alternative"}}
+{"step": 4, "actor": "buyer-2", "tool": "discover_offers", "args": {"agent_id": "buyer-2", "product": "tomato"}, "result": {"count": 1}}

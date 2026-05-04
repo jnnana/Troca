@@ -1,0 +1,3 @@
+{"_meta": {"name": "auth_denied_self_propose", "purpose": "Seller cannot propose against own offer; canonical AUTH_DENIED transcript with hint shape.", "tags": ["error", "auth"]}}
+{"step": 1, "actor": "seller-1", "tool": "announce_offer", "args": {"agent_id": "seller-1", "product": "Hake", "quantity": 200, "unit": "kg", "price_min": 5.0, "location": "Vigo", "available_until": "$now+24h"}, "result": {"status": "announced", "offer_id": "$offer_id"}}
+{"step": 2, "actor": "seller-1", "tool": "propose_deal", "args": {"offer_id": "$offer_id", "buyer_agent_id": "seller-1", "proposed_price": 4.5, "proposed_quantity": 100, "proposed_delivery": "$now+48h", "expires_at": "$now+12h"}, "result": {"error": {"code": "AUTH_DENIED", "retryable": false}}}

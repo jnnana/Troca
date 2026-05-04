@@ -1,0 +1,6 @@
+{"_meta": {"name": "happy_close", "purpose": "Full trade: announce, discover, propose, accept, read stats.", "tags": ["happy-path", "full-flow"]}}
+{"step": 1, "actor": "seller-1", "tool": "announce_offer", "args": {"agent_id": "seller-1", "product": "Olive Oil EVOO", "quantity": 500, "unit": "liter", "price_min": 8.0, "price_currency": "EUR", "location": "Jaén, Spain", "available_until": "$now+48h", "certifications": ["organic"]}, "result": {"status": "announced", "offer_id": "$offer_id"}}
+{"step": 2, "actor": "buyer-1", "tool": "discover_offers", "args": {"agent_id": "buyer-1", "product": "olive", "max_price": 9.0}, "result": {"count": 1}}
+{"step": 3, "actor": "buyer-1", "tool": "propose_deal", "args": {"offer_id": "$offer_id", "buyer_agent_id": "buyer-1", "proposed_price": 8.5, "proposed_quantity": 200, "proposed_delivery": "$now+72h", "expires_at": "$now+24h"}, "result": {"status": "proposed", "proposal_id": "$proposal_id"}}
+{"step": 4, "actor": "seller-1", "tool": "accept_deal", "args": {"proposal_id": "$proposal_id", "accepting_agent_id": "seller-1"}, "result": {"status": "deal_closed", "deal_id": "$deal_id", "agreement": {"final_price": 8.5, "final_quantity": 200}}}
+{"step": 5, "actor": "buyer-1", "tool": "get_market_stats", "args": {"product": "olive"}, "result": {"stats": {"deals_closed": 1, "total_volume_eur": 1700.0, "active_offers": 0}}}
