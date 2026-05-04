@@ -22,6 +22,8 @@ import pytest
 
 from server import zocux_server as z
 
+pytestmark = pytest.mark.usefixtures("clean_state")
+
 TRANSCRIPTS = Path(__file__).resolve().parent.parent / "transcripts"
 
 _PLACEHOLDER = re.compile(r"^\$([a-z_][a-z0-9_]*)$")

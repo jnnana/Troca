@@ -18,6 +18,8 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
+from server import matching_engine
+
 app = Server("zocux-market")
 
 db_pool = None
@@ -87,11 +89,17 @@ ANNOUNCE_DESC = (
 )
 
 DISCOVER_DESC = (
-    "EFFECT: read active offers matching filters; appends DISCOVER to ledger as search audit.\n"
+    "EFFECT: rank active offers against the query; appends DISCOVER to ledger as search audit.\n"
     "AUTH: any agent.\n"
     "IDEMPOTENT: yes via `idempotency_key` for the audit row (scope: agent_id+DISCOVER).\n"
-    "FILTERS: `product` ILIKE substring (required); `max_price` upper bound; `location` substring; `certification_required` exact match.\n"
-    "RETURNS: {offers, count, market}; offers carry the full ANNOUNCE payload.\n"
+    "MATCHING: hard filters reject when product score is 0, max_price is exceeded, "
+    "or a required certification is missing. Soft signals contribute to the score: "
+    "product (exact > substring > trigram > token overlap), price headroom, location "
+    "(exact > substring > mismatch), certifications.\n"
+    "FILTERS: `product` (required); `max_price` upper bound; `location` text; "
+    "`certification_required` exact match.\n"
+    "RETURNS: {offers, count, market}; each offer carries `match: {score, reasons}`. "
+    "Sorted by score desc; ties broken by offer_id.\n"
     "ERRORS: none."
 )
 
@@ -383,24 +391,20 @@ async def call_tool(name: str, arguments: dict):
             rows = await conn.fetch("""
                 SELECT payload FROM protocol_messages m
                 WHERE type='ANNOUNCE'
-                  AND payload->>'product' ILIKE $1
                   AND (payload->>'available_until')::timestamptz > NOW()
                   AND NOT EXISTS (
                         SELECT 1 FROM protocol_messages a
                         WHERE a.type='ACCEPT'
                           AND a.payload->>'offer_id' = m.payload->>'offer_id'
                   )
-            """, f"%{arguments['product']}%")
-            offers = [json.loads(r["payload"]) for r in rows]
-            if arguments.get("max_price") is not None:
-                offers = [o for o in offers if float(o.get("price_min", 9e18)) <= arguments["max_price"]]
-            if arguments.get("location"):
-                loc = arguments["location"].lower()
-                offers = [o for o in offers if loc in o.get("location", "").lower()]
-            if arguments.get("certification_required"):
-                req = arguments["certification_required"].lower()
-                offers = [o for o in offers
-                          if any(req == c.lower() for c in o.get("certifications", []))]
+            """)
+            candidates = [json.loads(r["payload"]) for r in rows]
+        # Map the wire field name to the engine's canonical key.
+        query = dict(arguments)
+        if query.get("certification_required"):
+            query["certifications_required"] = [query["certification_required"]]
+        ranked = matching_engine.rank(candidates, query)
+        offers = [r.to_dict() for r in ranked]
         await log_message("DISCOVER",
                           {"created_at": now_iso(), **arguments},
                           arguments["agent_id"], idem)

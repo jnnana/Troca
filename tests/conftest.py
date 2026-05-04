@@ -39,27 +39,6 @@ from server import zocux_server as z  # noqa: E402
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "db" / "schema.sql"
 
 
-def pytest_collection_modifyitems(config, items):
-    """Skip the suite cleanly if Postgres or Redis is unreachable."""
-    import asyncio
-
-    async def _check():
-        conn = await asyncpg.connect(TEST_DB_URL)
-        await conn.close()
-        r = aioredis.from_url(TEST_REDIS_URL)
-        try:
-            await r.ping()
-        finally:
-            await r.aclose()
-
-    try:
-        asyncio.get_event_loop().run_until_complete(_check())
-    except Exception as exc:
-        skip = pytest.mark.skip(reason=f"Test services unavailable: {exc}")
-        for item in items:
-            item.add_marker(skip)
-
-
 async def _apply_schema_and_truncate():
     conn = await asyncpg.connect(TEST_DB_URL)
     try:
@@ -77,11 +56,16 @@ async def _flush_redis():
         await r.aclose()
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def _clean_state():
-    await _apply_schema_and_truncate()
-    await _flush_redis()
-    # Reset the server's lazy globals so every test gets a fresh pool.
+# Opt-in fixture: integration test modules pull it in via
+#   pytestmark = pytest.mark.usefixtures("clean_state")
+# Pure unit modules (e.g. test_matching.py) skip it and never hit Postgres/Redis.
+@pytest_asyncio.fixture
+async def clean_state():
+    try:
+        await _apply_schema_and_truncate()
+        await _flush_redis()
+    except Exception as exc:
+        pytest.skip(f"Test services unavailable: {exc}", allow_module_level=False)
     z.db_pool = None
     z.redis_client = None
     yield

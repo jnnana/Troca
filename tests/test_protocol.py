@@ -5,7 +5,11 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from server import zocux_server as z
+
+pytestmark = pytest.mark.usefixtures("clean_state")
 
 
 def _parse(result):
